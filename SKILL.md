@@ -20,6 +20,20 @@ Phase 1 (Python)           Phase 2 (Agent)              Phase 3 (Python)
 数据采集 ──► JSON 数据 ──► AI 智能分析 ──► 分析结果 ──► Word 报告生成
 ```
 
+## 工作区目录配置（重要）
+
+> **所有输出（数据、报告、日志）必须写入用户当前项目目录，而非技能安装目录。**
+
+Agent 执行本 Skill 时，需按以下方式指定工作区目录：
+
+- **CodeBuddy**：Agent 自然在用户项目目录下执行，`run.sh` 自动捕获 `$PWD` 作为工作区。
+- **WorkBuddy**：Agent 运行在技能安装目录下，需通过以下方式之一指定工作区：
+  - **方式一（推荐）**：`cd /path/to/user/project && bash /path/to/skill/scripts/run.sh collect`
+  - **方式二**：设置环境变量 `SKILL_WORKSPACE=/path/to/user/project bash /path/to/skill/scripts/run.sh collect`
+  - **方式三**：显式传参 `./scripts/run.sh collect --workspace /path/to/user/project`
+
+> `run.sh` 会检测工作区与技能目录是否相同，相同时会输出警告提示。
+
 ## 适用场景
 
 - "帮我提炼周报" / "总结一下周报" / "看一下周报的内容"
