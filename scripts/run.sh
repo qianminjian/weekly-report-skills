@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# 保存用户当前工作目录（即工作区目录），后续所有输出将基于此目录
+WORKSPACE_DIR="$PWD"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -12,5 +15,5 @@ if [ ! -d ".venv" ]; then
     ./scripts/setup.sh
 fi
 
-# 运行主程序
-uv run python main.py "$@"
+# 运行主程序，传入工作区目录
+uv run python main.py --workspace "$WORKSPACE_DIR" "$@"

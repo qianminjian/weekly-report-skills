@@ -22,9 +22,10 @@ from src.weekly_detail import generate_weekend_detail
 logger = logging.getLogger(__name__)
 
 
-def setup_logging():
+def setup_logging(workspace: Path | None = None):
     """配置日志"""
-    log_dir = Path(__file__).parent / "logs"
+    base = workspace if workspace is not None else Path(__file__).parent
+    log_dir = base / "logs"
     log_dir.mkdir(exist_ok=True)
     log_file = log_dir / f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     logging.basicConfig(
@@ -37,11 +38,12 @@ def setup_logging():
     )
 
 
-def _get_output_dir(date_str: str | None = None) -> Path:
-    """返回输出目录 'Weekly-Report-yyyy-mm-dd/'（位于项目工作目录下）"""
+def _get_output_dir(date_str: str | None = None, workspace: Path | None = None) -> Path:
+    """返回输出目录 'Weekly-Report-yyyy-mm-dd/'（位于 workspace 下，默认为 CWD）"""
     if date_str is None:
         date_str = datetime.now().strftime("%Y-%m-%d")
-    return Path(f"Weekly-Report-{date_str}")
+    base = workspace if workspace is not None else Path.cwd()
+    return base / f"Weekly-Report-{date_str}"
 
 
 def _next_version(output_dir: Path, date_str: str, ext: str) -> Path:
@@ -137,10 +139,11 @@ def cmd_collect(args):
     }
 
     # 输出到 Weekly-Report-yyyy-mm-dd/ 目录
+    workspace = Path(args.workspace) if args.workspace else None
     if args.output:
         output_path = Path(args.output)
     else:
-        output_dir = _get_output_dir()
+        output_dir = _get_output_dir(workspace=workspace)
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / "analysis_data.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -154,7 +157,7 @@ def cmd_collect(args):
     if args.output:
         detail_output_dir = Path(args.output).parent
     else:
-        detail_output_dir = _get_output_dir()
+        detail_output_dir = _get_output_dir(workspace=workspace)
 
     detail_path = generate_weekend_detail(messages, detail_output_dir)
     if detail_path:
@@ -187,11 +190,12 @@ def cmd_report(args):
 
     # 生成 Word 报告 → Weekly-Report-yyyy-mm-dd/ 目录，版本号递增
     date_str = datetime.now().strftime("%Y-%m-%d")
+    workspace = Path(args.workspace) if args.workspace else None
 
     if args.output:
         output_path = args.output
     else:
-        output_dir = _get_output_dir(date_str)
+        output_dir = _get_output_dir(date_str, workspace=workspace)
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = str(_next_version(output_dir, date_str, "docx"))
 
@@ -239,7 +243,8 @@ def cmd_detail(args):
         logging.error("未拉取到任何消息")
         sys.exit(1)
 
-    output_dir = Path(args.output_dir) if args.output_dir else _get_output_dir()
+    workspace = Path(args.workspace) if args.workspace else None
+    output_dir = Path(args.output_dir) if args.output_dir else _get_output_dir(workspace=workspace)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     result = generate_weekend_detail(messages, output_dir)
@@ -250,9 +255,15 @@ def cmd_detail(args):
 
 
 def main():
-    setup_logging()
+    # 预解析 --workspace 以初始化日志到正确目录
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--workspace", default=None)
+    pre_args, _ = pre_parser.parse_known_args()
+    workspace = Path(pre_args.workspace) if pre_args.workspace else None
+    setup_logging(workspace)
 
     parser = argparse.ArgumentParser(description="飞书汇报差异分析（双阶段流水线）")
+    parser.add_argument("--workspace", default=None, help="工作目录（输出路径的基准目录，默认：当前目录）")
     subparsers = parser.add_subparsers(dest="command", help="子命令")
 
     # ---- collect 子命令 ----
