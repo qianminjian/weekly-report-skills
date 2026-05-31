@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Optional, Union, Dict, List
 
 from docx import Document
-from docx.shared import Cm, Pt, RGBColor, Emu
+from docx.shared import Cm, Pt, RGBColor
 from docx.oxml.ns import qn as QN
 
 logger = logging.getLogger(__name__)

@@ -31,15 +31,6 @@ from .parser import (
 
 logger = logging.getLogger(__name__)
 
-# 风险等级排序 & 色彩映射（复用自 reporter.py）
-RISK_COLORS = {
-    "阻塞": RGBColor(204, 0, 0),
-    "延期": RGBColor(230, 120, 0),
-    "资源": RGBColor(180, 130, 0),
-    "依赖": RGBColor(0, 100, 180),
-}
-
-
 def _calc_weekend_window(now: datetime) -> tuple[datetime, datetime]:
     """根据当前时间计算目标周末窗口
 

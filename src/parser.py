@@ -1,9 +1,9 @@
 """消息解析：按人分组、链接提取、内容归类"""
 
+import json
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
 
 from .fetcher import fetch_document, extract_doc_urls
 
@@ -142,7 +142,6 @@ def _extract_message_text(msg: dict) -> str:
     body = msg.get("body", {})
     content = body.get("content", "") if isinstance(body, dict) else ""
     if isinstance(content, str):
-        import json
         try:
             parsed = json.loads(content)
             if isinstance(parsed, dict):

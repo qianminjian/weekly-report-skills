@@ -1,0 +1,18 @@
+{
+  "name": "project-finalize",
+  "leadAgentId": "026ccffb25294ed5963c7dcd1fd148aa",
+  "workspacePath": "/Users/minjianq/Documents/CodeBuddy/feishu-weekly-report-skills",
+  "createdAt": "2026-05-31T15:24:56.942Z",
+  "options": {
+    "workspacePath": "/Users/minjianq/Documents/CodeBuddy/feishu-weekly-report-skills",
+    "isAutoTeam": false
+  },
+  "members": [
+    {
+      "memberId": "team-lead@project-finalize",
+      "name": "team-lead",
+      "role": "Team Lead - coordinates the team and interacts with the user"
+    }
+  ],
+  "isAutoTeam": false
+}
