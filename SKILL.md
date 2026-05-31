@@ -20,19 +20,18 @@ Phase 1 (Python)           Phase 2 (Agent)              Phase 3 (Python)
 数据采集 ──► JSON 数据 ──► AI 智能分析 ──► 分析结果 ──► Word 报告生成
 ```
 
-## 工作区目录配置（重要）
+## 工作区路径（Agent 第一步必须确定，不弹对话框）
 
-> **所有输出（数据、报告、日志）必须写入用户当前项目目录，而非技能安装目录。**
+> **严禁弹出保存位置对话框**。Agent 必须在执行任何操作前，自行确定以下两个绝对路径，后续所有命令均使用绝对路径：
 
-Agent 执行本 Skill 时，需按以下方式指定工作区目录：
+| 变量 | 含义 | 获取方式 |
+|------|------|---------|
+| `{WORKSPACE}` | 用户当前项目的绝对路径 | Agent 的当前工作目录（用户打开项目的位置） |
+| `{SKILL_DIR}` | 本技能安装的绝对路径 | SKILL.md 所在目录 |
 
-- **CodeBuddy**：Agent 自然在用户项目目录下执行，`run.sh` 自动捕获 `$PWD` 作为工作区。
-- **WorkBuddy**：Agent 运行在技能安装目录下，需通过以下方式之一指定工作区：
-  - **方式一（推荐）**：`cd /path/to/user/project && bash /path/to/skill/scripts/run.sh collect`
-  - **方式二**：设置环境变量 `SKILL_WORKSPACE=/path/to/user/project bash /path/to/skill/scripts/run.sh collect`
-  - **方式三**：显式传参 `./scripts/run.sh collect --workspace /path/to/user/project`
+**Agent 第一步**：确定并记录 `{WORKSPACE}` 和 `{SKILL_DIR}` 的绝对路径，不得使用 `~` 或相对路径。
 
-> `run.sh` 会检测工作区与技能目录是否相同，相同时会输出警告提示。
+> `run.sh` 内部会检测 `SKILL_WORKSPACE` 环境变量。若 Agent 环境不直接代入，请在运行脚本前 `export SKILL_WORKSPACE="{WORKSPACE}"`。
 
 ## 适用场景
 
@@ -52,10 +51,10 @@ lark-cli auth status
 
 2. **汇报数据路径** — 采集固定从飞书「消息→汇报」路径拉取，不再搜索群聊，避免盲目寻找。确保飞书账户「消息」Tab 下有「汇报」会话。
 
-3. **Python 环境** — 使用 `uv` 管理，首次运行会自动初始化：
+3. **Python 环境** — 使用 `uv` 管理，首次运行会自动初始化（在技能目录下执行）：
 
 ```bash
-./scripts/setup.sh
+bash "{SKILL_DIR}/scripts/setup.sh"
 ```
 
 ## 工作流
@@ -71,11 +70,11 @@ lark-cli auth status
 Agent 执行以下命令，从飞书「消息→汇报」路径拉取汇报数据：
 
 ```bash
-# 基础采集（自动定位「消息→汇报」路径，回溯 6 周）
-./scripts/run.sh collect
+# Agent 必须用绝对路径，{WORKSPACE} 替换为用户项目目录
+SKILL_WORKSPACE="{WORKSPACE}" bash "{SKILL_DIR}/scripts/run.sh" collect
 
-# 指定回溯周数和输出路径
-./scripts/run.sh collect --weeks 4 --output output/my_data.json
+# 指定回溯周数
+SKILL_WORKSPACE="{WORKSPACE}" bash "{SKILL_DIR}/scripts/run.sh" collect --weeks 4
 ```
 
 **参数说明：**
@@ -84,13 +83,13 @@ Agent 执行以下命令，从飞书「消息→汇报」路径拉取汇报数�
 |------|--------|------|
 | `--chat-id` | 无 | 对话 ID，指定后跳过自动定位 |
 | `--weeks` | `6` | 回溯周数 |
-| `--output` | `Weekly-Report-yyyy-mm-dd/analysis_data.json` | 采集数据输出路径 |
-
-> 输出目录固定为 `Weekly-Report-yyyy-mm-dd/`，位于**当前工作区**（运行命令时的 `$PWD`）下。`run.sh` 会自动将工作区目录作为 `--workspace` 传入，确保输出在用户项目目录而非 Skill 安装目录。
+| `--output` | 自动 | 默认输出到 `{WORKSPACE}/Weekly-Report-YYYY-MM-DD/analysis_data.json` |
 
 > 采集固定从飞书「消息→汇报」路径拉取，无需指定群聊名称。内部实现优先查找汇报 Bot P2P 对话，其次搜索汇报群聊，不盲目搜索所有群。
 
-**输出文件**：`Weekly-Report-yyyy-mm-dd/analysis_data.json`（位于当前工作区目录下）
+**输出文件**：`{WORKSPACE}/Weekly-Report-YYYY-MM-DD/analysis_data.json`
+
+> Agent 必须记住 Phase 1 标准输出中打印的实际输出路径，用于 Phase 2/3。
 
 ```json
 {
@@ -118,14 +117,17 @@ Agent 执行以下命令，从飞书「消息→汇报」路径拉取汇报数�
 
 ### Phase 2: Agent AI 智能分析
 
-> **关键**：Phase 2 的输出路径必须与 Phase 1 保持一致，写入同一 `Weekly-Report-yyyy-mm-dd/` 子目录，不要弹出对话框询问保存位置。
+> **关键**：所有文件读写必须使用绝对路径，严禁弹出保存对话框。
+>
+> **路径获取**：Agent 从 Phase 1 的标准输出中获取 `analysis_data.json` 的绝对路径（形如 `/absolute/path/Weekly-Report-YYYY-MM-DD/analysis_data.json`）。
 
-**路径计算**：Agent 从 Phase 1 的输出中获取日期目录。Phase 1 输出到 `{workspace}/Weekly-Report-{yyyy-mm-dd}/analysis_data.json`，Phase 2 的所有中间产物也写入同一日期目录。
+**Agent 执行步骤：**
 
-Agent 执行步骤：
-
-1. 读取 Phase 1 输出的 `analysis_data.json`（路径从 Phase 1 标准输出或日志中获取，通常为 `Weekly-Report-{今天日期}/analysis_data.json`）
+1. 用 `read_file` 读取 Phase 1 输出的 `analysis_data.json`（绝对路径）
 2. 使用当前运行的模型，对每人进行对比分析
+3. 分析完成后，用 `write_to_file` **直接写入**与 `analysis_data.json` 同目录下的 `analysis_result.json`
+   - `analysis_result.json` 的绝对路径 = `analysis_data.json` 所在目录 + `/analysis_result.json`
+   - **必须传入绝对路径**，不要传入相对路径，避免触发保存对话框
 
 **分析维度（四象限风险识别）：**
 
@@ -155,11 +157,12 @@ Agent 执行步骤：
 
 > **key_concerns 格式要求**：每个关注事项使用 `问题描述——缓解建议` 格式，用 `——` 分隔，例如：`"新信贷信创服务器资源短缺导致项目阻塞——建议管理部紧急协调资源"`
 
-**分析 Prompt 模板**：见 `prompts/diff_analysis.md`，Agent 应使用此模板对每人进行分析。
+**分析 Prompt 模板**：见 `{SKILL_DIR}/prompts/diff_analysis.md`，Agent 应使用 `read_file` 读取此模板用于分析。
 
-**Agent 输出**：分析完成后，Agent 将结果**直接写入** `analysis_data.json` 所在目录下的 `analysis_result.json`。<br/>
-**路径规则**：`{workspace}/Weekly-Report-{yyyy-mm-dd}/analysis_result.json`<br/>
-**禁止弹出保存对话框**：Agent 必须使用 `write_to_file` 工具写入准确路径，不得提示用户选择存储位置。
+**Agent 输出**：分析完成后，Agent 用 `write_to_file` **以绝对路径**写入 `analysis_result.json`：
+- **路径规则**：与 `analysis_data.json` 同级目录，文件名为 `analysis_result.json`
+- **示例**：若 `analysis_data.json` 在 `/Users/xxx/project/Weekly-Report-2026-05-31/analysis_data.json`，则写入 `/Users/xxx/project/Weekly-Report-2026-05-31/analysis_result.json`
+- **严禁传相对路径**，否则会触发保存对话框
 
 ```json
 {
@@ -199,43 +202,47 @@ Agent 执行步骤：
 
 ### Phase 3: 报告生成（Python 脚本）
 
-Agent 完成分析后，执行以下命令生成 Word 报告（路径与 Phase 1/2 同一日期目录）：
+Agent 完成分析后，执行以下命令生成 Word 报告：
 
 ```bash
-# 生成报告（自动使用 Phase 2 的输出目录，版本号递增）
-./scripts/run.sh report Weekly-Report-yyyy-mm-dd/analysis_result.json
+# 生成报告（{WORKSPACE} 和 {SKILL_DIR} 替换为实际绝对路径）
+SKILL_WORKSPACE="{WORKSPACE}" bash "{SKILL_DIR}/scripts/run.sh" report "{WORKSPACE}/Weekly-Report-YYYY-MM-DD/analysis_result.json"
 
-# 指定群名和输出路径
-./scripts/run.sh report Weekly-Report-yyyy-mm-dd/analysis_result.json --chat-name "团队周报" --output Weekly-Report-yyyy-mm-dd/my_report.docx
+# 指定群名
+SKILL_WORKSPACE="{WORKSPACE}" bash "{SKILL_DIR}/scripts/run.sh" report "{WORKSPACE}/Weekly-Report-YYYY-MM-DD/analysis_result.json" --chat-name "团队周报"
 ```
 
-> **注意**：Agent 需要在执行命令前，将 `yyyy-mm-dd` 替换为当天实际日期。
+> **注意**：Agent 必须将 `YYYY-MM-DD` 替换为当天实际日期；`{WORKSPACE}` 和 `{SKILL_DIR}` 替换为第一步确定的绝对路径。
 
 **参数说明：**
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `input` | 必填 | Agent 分析结果 JSON 文件路径 |
+| `input` | 必填 | `analysis_result.json` 的**绝对路径** |
 | `--chat-name` | `"汇报"` | 数据来源名称（用于报告标题） |
-| `--output` | `Weekly-Report-yyyy-mm-dd/Weekly-Report-ImportInfo-yyyy-mm-dd-vN.docx` | 输出 Word 路径（版本号自动递增） |
+| `--output` | 自动 | 默认输出到同目录下 `Weekly-Report-ImportInfo-YYYY-MM-DD-vN.docx`（版本号递增） |
 
 > 同一目录下多次生成报告，版本号自动递增：`v1` → `v2` → `v3` …
 
 ### 完整执行示例
 
-Agent 端到端执行流程（以 2026-05-31 为例）：
+Agent 端到端执行流程（以 2026-05-31 为例，假设工作区为 `/Users/xxx/my-project`，技能目录为 `/Users/xxx/.workbuddy/skills/lark-workflow-weekly-report`）：
 
+**Phase 1 - 数据采集：**
 ```bash
-# 1. 数据采集（自动从「消息→汇报」路径拉取，回溯 6 周）
-#    → 输出到 Weekly-Report-2026-05-31/analysis_data.json
-./scripts/run.sh collect
+SKILL_WORKSPACE="/Users/xxx/my-project" bash "/Users/xxx/.workbuddy/skills/lark-workflow-weekly-report/scripts/run.sh" collect
+# → 输出: /Users/xxx/my-project/Weekly-Report-2026-05-31/analysis_data.json
+```
 
-# 2. Agent 读取 Weekly-Report-2026-05-31/analysis_data.json 并进行分析
-#    → 直接写入 Weekly-Report-2026-05-31/analysis_result.json（不弹对话框）
+**Phase 2 - AI 分析（Agent 上下文内完成，不弹对话框）：**
+- `read_file("/Users/xxx/my-project/Weekly-Report-2026-05-31/analysis_data.json")`
+- Agent 逐人对比分析，识别差异与风险
+- `write_to_file("/Users/xxx/my-project/Weekly-Report-2026-05-31/analysis_result.json", content=...)`
 
-# 3. 报告生成（版本号自动递增）
-#    → 输出 Weekly-Report-2026-05-31/Weekly-Report-ImportInfo-2026-05-31-v1.docx
-./scripts/run.sh report Weekly-Report-2026-05-31/analysis_result.json
+**Phase 3 - 报告生成：**
+```bash
+SKILL_WORKSPACE="/Users/xxx/my-project" bash "/Users/xxx/.workbuddy/skills/lark-workflow-weekly-report/scripts/run.sh" report "/Users/xxx/my-project/Weekly-Report-2026-05-31/analysis_result.json"
+# → 输出: /Users/xxx/my-project/Weekly-Report-2026-05-31/Weekly-Report-ImportInfo-2026-05-31-v1.docx
 ```
 
 ## 报告结构
