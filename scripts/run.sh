@@ -4,8 +4,9 @@ set -euo pipefail
 # 工作区目录获取优先级：
 #   1. SKILL_WORKSPACE 环境变量（WorkBuddy 等平台由 Agent 设置）
 #   2. 当前工作目录 $PWD（适用于直接在项目目录执行的情况）
-#   3. 如果前两者都指向技能安装目录，由调用方通过 --workspace 传入
-WORKSPACE_DIR="${SKILL_WORKSPACE:-$PWD}"
+# export 后对 Python 子进程可见（SKILL_WORKSPACE 是 main.py _resolve_workspace 的第二优先级）
+export SKILL_WORKSPACE="${SKILL_WORKSPACE:-"$PWD"}"
+WORKSPACE_DIR="$SKILL_WORKSPACE"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"

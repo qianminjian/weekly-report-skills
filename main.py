@@ -8,6 +8,7 @@
 import argparse
 import json
 import logging
+import os
 import re
 import sys
 from datetime import datetime
@@ -20,6 +21,23 @@ from src.reporter import generate_report
 from src.weekly_detail import generate_weekend_detail
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_workspace(arg_workspace: str | None) -> Path | None:
+    """三层优先级解析工作区路径：
+
+    1. CLI 参数 --workspace（run.sh 传入）
+    2. SKILL_WORKSPACE 环境变量（WorkBuddy 等平台设置）
+    3. None（fallback 到 Path.cwd()，通常指向技能安装目录，需避免）
+
+    详见 SKILL.md「工作区路径」章节。
+    """
+    if arg_workspace:
+        return Path(arg_workspace)
+    env_ws = os.environ.get("SKILL_WORKSPACE")
+    if env_ws:
+        return Path(env_ws)
+    return None
 
 
 def setup_logging(workspace: Path | None = None):
@@ -139,7 +157,7 @@ def cmd_collect(args):
     }
 
     # 输出到 Weekly-Report-yyyy-mm-dd/ 目录
-    workspace = Path(args.workspace) if args.workspace else None
+    workspace = _resolve_workspace(args.workspace)
     if args.output:
         output_path = Path(args.output)
     else:
@@ -190,7 +208,7 @@ def cmd_report(args):
 
     # 生成 Word 报告 → Weekly-Report-yyyy-mm-dd/ 目录，版本号递增
     date_str = datetime.now().strftime("%Y-%m-%d")
-    workspace = Path(args.workspace) if args.workspace else None
+    workspace = _resolve_workspace(args.workspace)
 
     if args.output:
         output_path = args.output
@@ -243,7 +261,7 @@ def cmd_detail(args):
         logging.error("未拉取到任何消息")
         sys.exit(1)
 
-    workspace = Path(args.workspace) if args.workspace else None
+    workspace = _resolve_workspace(args.workspace)
     output_dir = Path(args.output_dir) if args.output_dir else _get_output_dir(workspace=workspace)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -259,7 +277,7 @@ def main():
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument("--workspace", default=None)
     pre_args, _ = pre_parser.parse_known_args()
-    workspace = Path(pre_args.workspace) if pre_args.workspace else None
+    workspace = _resolve_workspace(pre_args.workspace)
     setup_logging(workspace)
 
     parser = argparse.ArgumentParser(description="飞书汇报差异分析（双阶段流水线）")

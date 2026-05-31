@@ -31,7 +31,7 @@ Phase 1 (Python)           Phase 2 (Agent)              Phase 3 (Python)
 
 **Agent 第一步**：确定并记录 `{WORKSPACE}` 和 `{SKILL_DIR}` 的绝对路径，不得使用 `~` 或相对路径。
 
-> `run.sh` 内部会检测 `SKILL_WORKSPACE` 环境变量。若 Agent 环境不直接代入，请在运行脚本前 `export SKILL_WORKSPACE="{WORKSPACE}"`。
+> `run.sh` 会 export `SKILL_WORKSPACE`，Python 程序内部（`main.py`）也会读取同名环境变量作为第二优先级 fallback。若 Agent 环境直接代入 `{WORKSPACE}` 到 `--workspace` 参数则无需 export。
 
 ## 适用场景
 
