@@ -1,0 +1,13 @@
+{
+  "name": "lark-workflow-weekly-report",
+  "version": "2.1.0",
+  "description": "飞书周报提炼分析：从飞书「消息→汇报」自动拉取汇报材料，Agent 内置 AI 智能对比分析差异与风险，生成 Word 报告",
+  "author": {
+    "name": "minjianq"
+  },
+  "homepage": "https://github.com/minjianq/feishu-weekly-report-skills",
+  "repository": "https://github.com/minjianq/feishu-weekly-report-skills",
+  "keywords": ["飞书", "周报", "汇报", "分析", "Word", "lark"],
+  "category": "办公效率",
+  "skills": ["lark-workflow-weekly-report"]
+}

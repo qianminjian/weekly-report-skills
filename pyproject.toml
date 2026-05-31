@@ -1,0 +1,12 @@
+[project]
+name = "feishu-weekly-report-skills"
+version = "0.1.0"
+description = "飞书汇报差异分析：从群聊获取汇报材料，AI对比差异与风险，生成Word报告"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "python-docx>=1.1.0",
+]
+
+[project.scripts]
+report-diff = "main:main"

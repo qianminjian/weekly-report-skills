@@ -1,0 +1,26 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project output
+output/
+logs/
+Weekly-Report-*/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep plugin metadata
+!.codebuddy-plugin/
